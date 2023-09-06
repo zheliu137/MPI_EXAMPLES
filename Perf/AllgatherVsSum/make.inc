@@ -27,10 +27,10 @@
 
 # Top QE directory, useful for locating libraries,  linking QE with plugins
 # The following syntax should always point to TOPDIR:
-#TOPDIR = $(dir $(abspath $(filter %make.inc,$(MAKEFILE_LIST))))
+TOPDIR = $(dir $(abspath $(filter %make.inc,$(MAKEFILE_LIST))))
 # if it doesn't work, uncomment the following line (edit if needed):
 
-TOPDIR = /data/soft/qe-6.2.1
+# TOPDIR = /home/lw/soft/qe-6.2.1
 
 # DFLAGS  = precompilation options (possible arguments to -D and -U)
 #           used by the C compiler and preprocessor
@@ -42,9 +42,7 @@ TOPDIR = /data/soft/qe-6.2.1
 # MANUAL_DFLAGS  = additional precompilation option(s), if desired
 #                  BEWARE: it does not work for IBM xlf! Manually edit FDFLAGS
 MANUAL_DFLAGS  =
-#DFLAGS         =  -D__DFTI -D__MPI
-#FDFLAGS        = $(DFLAGS) $(MANUAL_DFLAGS)
-DFLAGS         = -D__MPI -D__SCALAPACK
+DFLAGS         =  -D__DFTI -D__MPI
 FDFLAGS        = $(DFLAGS) $(MANUAL_DFLAGS)
 
 # IFLAGS = how to locate directories with *.h or *.f90 file to be included
@@ -52,7 +50,7 @@ FDFLAGS        = $(DFLAGS) $(MANUAL_DFLAGS)
 #          the latter contains .e.g. files needed by FFT libraries
 # for libxc add -I/path/to/libxc/include/
 
-#IFLAGS         = -I$(TOPDIR)/include -I$(TOPDIR)/FoX/finclude -I../include/ -I/opt/intel/composer_xe_2015.3.187/mkl/include
+IFLAGS         = -I$(TOPDIR)/include -I$(TOPDIR)/FoX/finclude -I../include/ -I/opt/intel/mkl/2021.4.0/include
 
 # MOD_FLAGS = flag used by f90 compiler to locate modules
 # Each Makefile defines the list of needed modules in MODFLAGS
@@ -69,7 +67,7 @@ MOD_FLAG      = -I
 # and to specify the location of MPI libraries in MPI_LIBS
 
 MPIF90         = mpiifort
-F90            = ifort
+F90           = ifort
 CC             = icc
 F77            = ifort
 
@@ -78,36 +76,32 @@ F77            = ifort
 # preprocessing flags must include DFLAGS and IFLAGS
 
 CPP            = cpp
-CPPFLAGS       = -P -C -traditional $(DFLAGS) $(IFLAGS)
+CPPFLAGS       = -P -traditional $(DFLAGS) $(IFLAGS)
 
 # compiler flags: C, F90, F77
 # C flags must include DFLAGS and IFLAGS
 # F90 flags must include MODFLAGS, IFLAGS, and FDFLAGS with appropriate syntax
-CFLAGS         = -O3 $(DFLAGS) $(IFLAGS)
-F90FLAGS       = $(FFLAGS) -nomodule -fpp $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
-FFLAGS         = -O2 -assume byterecl -g -traceback
 
-#CFLAGS         = -O3 $(DFLAGS) $(IFLAGS)
-#F90FLAGS       = $(FFLAGS) -x f95-cpp-input $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
-#FFLAGS         = -O3 -g
+CFLAGS         = -O3 $(DFLAGS) $(IFLAGS)
+F90FLAGS       = $(FFLAGS) -nomodule -qopenmp -fpp $(FDFLAGS) $(IFLAGS) $(MODFLAGS)
+FFLAGS         = -O2 -assume byterecl -g -traceback -qopenmp
 
 # compiler flags without optimization for fortran-77
 # the latter is NEEDED to properly compile dlamch.f, used by lapack
 
-#FFLAGS_NOOPT   = -O0 -g
 FFLAGS_NOOPT   = -O0 -assume byterecl -g -traceback
 
 # compiler flag needed by some compilers when the main program is not fortran
 # Currently used for Yambo
 
-FFLAGS_NOMAIN   = -nofor_main 
+FFLAGS_NOMAIN   = -nofor_main
 
 # Linker, linker-specific flags (if any)
 # Typically LD coincides with F90 or MPIF90, LD_LIBS is empty
 # for libxc, set LD_LIBS=-L/path/to/libxc/lib/ -lxcf90 -lxc
 
 LD             = mpiifort
-LDFLAGS        =  -static-intel
+LDFLAGS        = -static-intel  -qopenmp
 LD_LIBS        = 
 
 # External Libraries (if any) : blas, lapack, fft, MPI
@@ -115,9 +109,8 @@ LD_LIBS        =
 # If you have nothing better, use the local copy via "--with-netlib" :
 # BLAS_LIBS = /your/path/to/espresso/LAPACK/blas.a
 # BLAS_LIBS_SWITCH = internal
-MKL_PATH=$(MKLROOT)/lib/intel64
-#BLAS_LIBS      =   -lmkl_gf_lp64  -lmkl_sequential -lmkl_core
-BLAS_LIBS      =-Wl,--start-group $(MKL_PATH)/libmkl_intel_lp64.a $(MKL_PATH)/libmkl_intel_thread.a $(MKL_PATH)/libmkl_core.a -Wl,--end-group -liomp5
+
+BLAS_LIBS      =   -lmkl_intel_lp64  -lmkl_intel_thread -lmkl_core
 BLAS_LIBS_SWITCH = external
 
 # If you have nothing better, use the local copy via "--with-netlib" :
@@ -129,17 +122,31 @@ BLAS_LIBS_SWITCH = external
 LAPACK_LIBS    = 
 LAPACK_LIBS_SWITCH = external
 
-SCALAPACK_LIBS = $(MKL_PATH)/libmkl_scalapack_lp64.a $(MKL_PATH)/libmkl_blacs_intelmpi_lp64.a 
+SCALAPACK_LIBS = 
+
+# nothing needed here if the the internal copy of FFTW is compiled
+# (needs -D__FFTW in DFLAGS)
+
+FFT_LIBS       = 
+
+# HDF5
+HDF5_LIB = 
+FOX_LIB  =
+POLYLOG_LIB = 
 
 # For parallel execution, the correct path to MPI libraries must
 # be specified in MPI_LIBS (except for IBM if you use mpxlf)
 
-MPI_LIBS       = /opt/intel/impi/5.0.3.048/intel64/lib/libmpi.a
+MPI_LIBS       = 
+
+# IBM-specific: MASS libraries, if available and if -D__MASS is defined in FDFLAGS
+
+MASS_LIBS      = 
 
 # ar command and flags - for most architectures: AR = ar, ARFLAGS = ruv
 
 AR             = ar
-ARFLAGS        = ruv
+ARFLAGS        = ruUv
 
 # ranlib command. If ranlib is not needed (it isn't in most cases) use
 # RANLIB = echo
@@ -151,7 +158,7 @@ RANLIB         = ranlib
 FLIB_TARGETS   = all
 
 LIBOBJS        = $(TOPDIR)/clib/clib.a  $(TOPDIR)/iotk/src/libiotk.a
-LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FOX_LIB) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(HDF5_LIB)  $(LD_LIBS)
+LIBS           = $(SCALAPACK_LIBS) $(LAPACK_LIBS) $(FOX_LIB) $(FFT_LIBS) $(BLAS_LIBS) $(MPI_LIBS) $(MASS_LIBS) $(HDF5_LIB)  $(LD_LIBS) $(POLYLOG_LIB)
 
 # wget or curl - useful to download from network
 WGET = wget -O
